@@ -34,6 +34,29 @@ BasicOcTreeNode::BasicOcTreeNode() {
 	dividerZ = 0;
 }
 
+BasicOcTreeNode::BasicOcTreeNode(float minx, float miny, float maxx, float maxy, BasicOcTreeNode* parent) {
+	objects.setNoDuplicateInsertPlan();
+
+	parentNode = parent;
+	nwNode = neNode = swNode = seNode = nullptr;
+	nwNode2 = neNode2 = swNode2 = seNode2 = nullptr;
+
+	minX = minx;
+	minY = miny;
+	minZ = 0;
+	maxX = maxx;
+	maxY = maxy;
+	maxZ = 0;
+
+	if (!validateNode() || minX > maxX || minY > maxY) {
+		logger.error() << "[BasicOcTree] invalid node in create - " << *this;
+	}
+
+	dividerX = (minX + maxX) / 2;
+	dividerY = (minY + maxY) / 2;
+	dividerZ = -1;
+}
+
 BasicOcTreeNode::BasicOcTreeNode(float minx, float miny, float minz, float maxx, float maxy, float maxz, BasicOcTreeNode* parent) {
 	objects.setNoDuplicateInsertPlan();
 
@@ -119,6 +142,22 @@ bool BasicOcTreeNode::testInside(OcTreeEntryInterface* obj) const {
 	float z = obj->getPositionZ();
 
 	return x >= minX && x < maxX && y >= minY && y < maxY && z >= minZ && z < maxZ;
+}
+
+bool BasicOcTreeNode::testInRange(float x, float y, float range) const {
+	bool insideX = (minX <= x) && (x < maxX);
+	bool insideY = (minY <= y) && (y < maxY);
+
+	if (insideX && insideY)
+		return true;
+
+	bool closeenoughX = (fabs(minX - x) <= range || fabs(maxX - x) <= range);
+	bool closeenoughY = (fabs(minY - y) <= range || fabs(maxY - y) <= range);
+
+	if ((insideX || closeenoughX) && (insideY || closeenoughY))
+		return true;
+	else
+		return false;
 }
 
 bool BasicOcTreeNode::testInRange(float x, float y, float z, float range) const {
